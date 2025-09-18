@@ -1,95 +1,28 @@
 # MNN
 
-### **Markovian Neural Network (MNN) Theory**
+Thank you for your patience! Now that I understand your request clearly, let's move forward with the following:
 
-The **Markovian Neural Network (MNN)** is an advanced neural network model where the traditional fixed-weight learning system is replaced with **Markovian processes** that govern the evolution of key parameters, such as the **learning rate** and **momentum**. This dynamic model adapts during training through feedback from its internal state, which enables it to adjust its learning strategies for improved performance.
+### **Key Concept Recap**:
 
-#### **Key Concepts**:
+* **Markov coefficients** (which are treated as the **weights**) evolve over time.
+* You want to **add noise mutations** and **dithering** to the process, similar to how leaky neurons behave, allowing the network to **explore** more effectively during training.
 
-1. **Markovian Coefficients**:
+### **Noise Mutations and Dithering**:
 
-   * **Markovian coefficients** like the **learning rate** and **momentum** evolve based on the **previous state** of the model. This means that instead of manually setting the learning rate, it evolves dynamically based on feedback from the network's training performance.
+1. **Noise Mutations**: This refers to **random noise** added to the inputs of the network, helping it explore the parameter space.
+2. **Dithering**: This is added to the output, serving as a form of **stochastic filtering** or **perturbation**, ensuring the network avoids overfitting and enhances generalization.
 
-2. **Noise as Mutation**:
-
-   * **Noise** is applied to the inputs and weights to introduce controlled mutations. This allows the model to **explore** different solutions and avoid getting trapped in local minima. The noise is adjusted gradually to help transition from exploration to exploitation as the model learns.
-
-3. **Dithering as a Filter**:
-
-   * **Dithering** is applied to the outputs of neurons to encourage **exploration** and prevent overfitting. This small, random perturbation ensures that the model does not converge too quickly to a suboptimal solution.
-
-4. **Evolving Parameters**:
-
-   * The network's parameters evolve over time according to a **Markov process**. At each step, the coefficients (learning rate, momentum, etc.) are adjusted dynamically based on feedback from the training process. This introduces **adaptive learning** that allows the model to continuously improve based on its past performance.
-
-5. **Training Dynamics**:
-
-   * Instead of relying on fixed hyperparameters or a manual update process, the **Markovian Neural Network** adjusts its internal learning mechanisms in real-time. The learning process is driven by the **Markov coefficients**, and the network gradually stabilizes by reducing noise and dithering over time.
-
-#### **Mathematical Representation**:
-
-The **Markovian Neural Network** can be described by the following dynamics:
-
-1. **State Equation**:
-
-   * The state of the network at each time step $t$ is given by the current **weights** $W_t$, **learning rate** $\eta_t$, and **momentum** $\mu_t$, as well as the noise and dither parameters $\nu_t$ and $\delta_t$, respectively.
-
-   The update rule is defined as:
-
-   $$
-   W_{t+1} = W_t - \eta_t \cdot \nabla L(W_t) + \mu_t \cdot (W_t - W_{t-1}) + \nu_t \cdot \epsilon_t
-   $$
-
-   where:
-
-   * $\eta_t$ is the **learning rate** at time $t$.
-   * $\mu_t$ is the **momentum**.
-   * $\nu_t$ is the **noise factor** that adds random mutations.
-   * $\epsilon_t$ is a random noise term.
-   * $L(W_t)$ is the loss function at time $t$.
-
-2. **Markov Coefficient Evolution**:
-   The Markov coefficients evolve over time based on the system's performance:
-
-   $$
-   \eta_{t+1} = f(\eta_t, L(W_t)) \quad \text{(Learning rate evolution)}
-   $$
-
-   $$
-   \mu_{t+1} = g(\mu_t, L(W_t)) \quad \text{(Momentum evolution)}
-   $$
-
-   $$
-   \nu_{t+1} = \nu_t \cdot \text{decay} \quad \text{(Noise decay)}
-   $$
-
-   $$
-   \delta_{t+1} = \delta_t \cdot \text{decay} \quad \text{(Dither decay)}
-   $$
-
-   These equations describe how the learning rate, momentum, noise, and dithering evolve based on the loss and feedback from the network.
-
-3. **Output Equation**:
-   The output at time step $t$ is given by the standard forward pass equation:
-
-   $$
-   y_t = \text{Activation}(W_t \cdot x + b)
-   $$
-
-   where:
-
-   * $y_t$ is the output at time $t$.
-   * $x$ is the input at time $t$.
-   * $W_t$ is the weight matrix at time $t$.
-   * $b$ is the bias vector.
-
-   The activation function is typically **ReLU** or **Sigmoid**, depending on the task (classification or regression).
+We'll add these effects to the neural network, making them **trainable parameters** that evolve as part of the network's learning process.
 
 ---
 
-### **Markovian Neural Network (MNN) Script**
+### **Corrected Network with Noise Mutations and Dithering**:
 
-Below is the **MNN implementation** using **Markovian coefficients**, **noise**, and **dithering**. This implementation defines a neural network where the learning rate and momentum evolve over time based on training feedback.
+Here’s the updated implementation where:
+
+* The **weights** (Markov coefficients) evolve during training.
+* **Noise mutations** are added to the inputs.
+* **Dithering** is added to the outputs, similar to leaky neurons.
 
 ```python
 import torch
@@ -97,39 +30,35 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-# ----- Markov Noisy Neuron -----
+# ----- Markov Coefficients as Learnable Parameters with Noise Mutations and Dithering -----
 class MarkovNoisyNeuron(nn.Module):
     def __init__(self, input_size, output_size):
         super(MarkovNoisyNeuron, self).__init__()
 
-        # Weights (trainable)
-        self.weights = nn.Parameter(torch.randn(input_size, output_size))
+        # Markov coefficients (weights) as learnable parameters
+        self.weights = nn.Parameter(torch.randn(input_size, output_size))  # These are the Markov coefficients
+        self.bias = nn.Parameter(torch.zeros(output_size))  # Bias for the layer
 
-        # Noise/dither learnable parameters
-        self.noise_factor = nn.Parameter(torch.tensor(0.05))
-        self.dither_strength = nn.Parameter(torch.tensor(0.05))
+        # Noise and dither parameters (learnable)
+        self.noise_factor = nn.Parameter(torch.tensor(0.05))  # Noise applied to inputs (mutation)
+        self.dither_strength = nn.Parameter(torch.tensor(0.05))  # Dither applied to outputs
 
     def forward(self, x, epoch):
-        # Decay noise & dither slightly each epoch (slower decay)
-        decay = 0.99  # Slower decay for noise and dithering
-        self.noise_factor.data *= decay
-        self.dither_strength.data *= decay
-
-        # Apply noise to inputs
+        # Apply noise to inputs (mutation effect)
         noise = torch.randn_like(x) * self.noise_factor
         x = x + noise
 
-        # Linear transform
-        output = torch.matmul(x, self.weights)
+        # Linear transformation (weighted sum of inputs)
+        output = torch.matmul(x, self.weights) + self.bias
 
-        # Apply dithering to outputs
+        # Apply dithering to outputs (stochastic filter)
         dither_noise = torch.randn_like(output) * self.dither_strength
         output = output + dither_noise
 
         return output
 
 
-# ----- Network using noisy neurons -----
+# ----- Markov Neural Network (MNN) with noise mutations and dithering -----
 class MarkovNoisyNetwork(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MarkovNoisyNetwork, self).__init__()
@@ -138,20 +67,21 @@ class MarkovNoisyNetwork(nn.Module):
 
     def forward(self, x, epoch):
         x = self.layer1(x, epoch)
-        x = F.relu(x)   # Non-linearity needed for XOR!
+        x = F.relu(x)   # Non-linearity needed for XOR
         x = self.layer2(x, epoch)
         return x
 
 
 # ----- XOR dataset -----
-X = torch.tensor([[0,0],[0,1],[1,0],[1,1]], dtype=torch.float32)
-y = torch.tensor([[0],[1],[1],[0]], dtype=torch.float32)
+X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32)
+y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32)
 
 # ----- Model -----
 model = MarkovNoisyNetwork(input_size=2, hidden_size=4, output_size=1)
 
-criterion = nn.BCEWithLogitsLoss()  # combines sigmoid + BCE
-optimizer = optim.Adam(model.parameters(), lr=0.005)  # Slightly reduced learning rate
+# Criterion and optimizer
+criterion = nn.BCEWithLogitsLoss()  # Binary Cross-Entropy Loss
+optimizer = optim.Adam(model.parameters(), lr=0.005)  # Optimizer adjusts Markov coefficients (weights)
 
 # ----- Training -----
 num_epochs = 10000
@@ -164,8 +94,8 @@ for epoch in range(num_epochs):
     optimizer.step()
 
     # Monitoring the progress
-    if (epoch+1) % 1000 == 0:
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
+    if (epoch + 1) % 1000 == 0:
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}")
 
 # ----- Testing -----
 model.eval()
@@ -175,31 +105,51 @@ with torch.no_grad():
     print("Rounded predictions:\n", predicted.round())  # Rounded predictions for binary output
 ```
 
-### **Explanation of Code**:
+---
 
-1. **MarkovNoisyNeuron**:
+### **What's New in This Version?**
 
-   * **Weights** are trainable parameters that evolve based on **Markov coefficients**.
-   * The neuron has **noise** and **dither** factors which are **adjusted** over time using a decay factor, ensuring that noise and dither gradually decrease as training progresses.
+1. **Noise Mutations**:
 
-2. **MarkovNoisyNetwork**:
+   * Each neuron adds **random noise** to its input data. This introduces **mutation** to the input, helping the network **explore** different solutions during training.
+   * The **noise factor** (`self.noise_factor`) is a **learnable parameter**, meaning the model can adjust the amount of noise dynamically during training.
 
-   * This is the neural network that includes layers of **Markov Noisy Neurons**.
-   * The network consists of two layers with **ReLU** applied after the first layer to introduce non-linearity.
+2. **Dithering**:
 
-3. **Training**:
+   * **Dithering** is applied to the neuron’s **output**, introducing small random perturbations. This helps to **stabilize the learning process** and **improve generalization** by preventing the model from overfitting to precise outputs.
+   * The **dither strength** (`self.dither_strength`) is also a **trainable parameter**, allowing the model to learn how much noise to add during output processing.
 
-   * The network is trained on the XOR dataset using **Binary Cross-Entropy Loss** (suitable for binary classification tasks).
-   * The **Adam optimizer** is used for updating the weights, with a **reduced learning rate** to stabilize the training process.
+3. **Trainable Parameters**:
 
-4. **Testing**:
+   * Both the **noise factor** and **dither strength** are **learnable parameters**, evolving through training via **backpropagation**.
+   * These allow the network to **optimize** how much **exploration** (noise) and **stabilization** (dithering) is necessary to perform well on the task.
 
-   * After training, the model’s output is passed through the **sigmoid function** to ensure binary outputs, which are then **rounded** to either 0 or 1.
+---
+
+### **How This Improves the Learning Process:**
+
+1. **Noise Mutations**:
+
+   * By introducing **random noise** into the inputs during training, the network is encouraged to **explore** different solutions, potentially avoiding getting stuck in local minima. The amount of noise is **learned** by the network, allowing it to adapt its exploration strategy.
+
+2. **Dithering**:
+
+   * The **dithering** added to the output helps ensure that the network doesn't **overfit**. It makes sure that the network doesn’t learn overly deterministic outputs but instead learns **robust representations** that generalize well to new data.
+
+3. **Self-Optimization**:
+
+   * The **noise** and **dithering** parameters are **learned by the network itself**, so the network can decide the best level of **exploration** and **regularization** needed to solve the problem.
 
 ---
 
 ### **Conclusion**:
 
-The **Markovian Neural Network (MNN)** uses **Markov coefficients** to evolve its learning dynamics, applying **noise** and **dithering** to explore and refine its solution space. The model gradually stabilizes as it **reduces randomness** over time, allowing it to converge on an optimal solution.
+In this updated **Markov Neural Network (MNN)**:
 
-This architecture can be extended to more complex tasks beyond XOR, where the dynamic nature of the **Markov coefficients** can provide adaptive learning strategies.
+* **Noise mutations** are added to the **inputs**, introducing randomness (mutation) to explore the solution space.
+* **Dithering** is applied to the **outputs** to prevent overfitting and improve generalization.
+* Both **noise** and **dithering** are **trainable parameters** that evolve during training, just like the traditional weights in a neural network.
+
+This implementation allows the network to **learn how much noise and dithering to apply**, making it **adaptive and self-optimizing** as it trains.
+
+Let me know if this now meets your expectations, or if you'd like to explore further adjustments!
